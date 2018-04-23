@@ -1,76 +1,78 @@
 'use strict';
 
 Vue.component('repo-list', {
-  data: function() {
-	return {
-	  auth: {
-		complete: false,
-		attempting: false,
-		failed: false,
-	  },
-	  api: undefined,
-	  repos: [],
-	  updating: false,
-	  loaded_all: false,
-	  unknown_fail: undefined,
-	};
-  },
-  directives: {
-	focus: {
-	  inserted: (el) => el.focus(),
-	},
-  },
-  methods: {
-	auth_attempt: function(event) {
-	  this.auth.attempting = true;
-	  let user_input = event.target.children[0];
-	  let pass_input = event.target.children[1];
-	  this.api = new RepoList(
-		user_input.value,
-		pass_input.value,
-		{per_page: 4, params: {
-		  sort: 'updated',
-		}},
-	  );
+    data: function() {
+        return {
+            auth: {
+                complete: false,
+                attempting: false,
+                failed: false,
+            },
+            api: undefined,
+            repos: [],
+            updating: false,
+            loaded_all: false,
+            unknown_fail: undefined,
+        };
+    },
+    directives: {
+        focus: {
+            inserted: (el) => el.focus(),
+        },
+    },
+    methods: {
+        auth_attempt: function(event) {
+            this.auth.attempting = true;
+            let user_input = event.target.children[0];
+            let pass_input = event.target.children[1];
+            this.api = new RepoList(
+                user_input.value,
+                pass_input.value, {
+                    per_page: 4,
+                    params: {
+                        sort: 'updated',
+                    }
+                },
+            );
 
-	  this.api.check_auth().then(() => {
-		this.auth.complete = true;
-		this.update_repos();
-	  }).catch((err) => {
-		if (err.response.status === 401)
-		  this.auth.failed = true;
-		else {
-		  this.unknown_fail = err;
-		  console.log('error: ' + err);
-		}
-	  }).finally(() => {
-		this.auth.attempting = false;
-	  });
+            this.api.check_auth().then(() => {
+                this.auth.complete = true;
+                this.update_repos();
+            }).catch((err) => {
+                if (err.response.status === 401)
+                    this.auth.failed = true;
+                else {
+                    this.unknown_fail = err;
+                    console.log('error: ' + err);
+                }
+            }).finally(() => {
+                this.auth.attempting = false;
+            });
 
-	},
-	update_repos: async function() {
-	  this.repos = [];
-	  this.updating = true;
-	  this.loaded_all = false;
+        },
+        update_repos: async function() {
+            this.repos = [];
+            this.updating = true;
+            this.loaded_all = false;
 
-	  // get a page and push all repos
-	  for await (let page of this.api) {
-		for (let repo of page) {
-		  this.repos.push({
-			name: repo.name,
-			full_name: repo.full_name,
-			clone_url: repo.clone_url,
-		  });
-		}
-		this.updating = false;
-		await at_bottom();
-		this.updating = true;
-	  }
-	  this.updating = false;
-	  this.loaded_all = true;
-	},
-  },
-  template: `
+            // get a page and push all repos
+            for await (let page of this.api) {
+                for (let repo of page) {
+                    this.repos.push({
+                        name: repo.name,
+                        full_name: repo.full_name,
+                        clone_url: repo.clone_url,
+                    });
+                }
+                this.updating = false;
+                await at_bottom();
+                this.updating = true;
+            }
+            this.updating = false;
+            this.loaded_all = true;
+        },
+    },
+    template: `
   <div>
 	<header class="navbar p-2">
 	  <p class="navbar-brand">VueHub</p>
@@ -131,5 +133,5 @@ Vue.component('repo-list', {
 });
 
 let app = new Vue({
-  el: '#mount',
+    el: '#mount',
 });
